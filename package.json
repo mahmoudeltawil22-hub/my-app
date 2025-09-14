@@ -13,5 +13,13 @@
     "@capacitor/cli": "^7.4.3",
     "@capacitor/core": "^7.4.3"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mahmoudeltawil22-hub/my-app.git"
+  },
+  "bugs": {
+    "url": "https://github.com/mahmoudeltawil22-hub/my-app/issues"
+  },
+  "homepage": "https://github.com/mahmoudeltawil22-hub/my-app#readme",
   "description": ""
 }
