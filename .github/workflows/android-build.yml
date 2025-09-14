@@ -1,19 +1,16 @@
-name: Build Android APK (Debug)
+name: Build Android APK
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   workflow_dispatch:
-
-env:
-  ANDROID_SDK_ROOT: ${{ runner.workspace }}/android-sdk
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
+      - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Setup Node.js
@@ -21,56 +18,26 @@ jobs:
         with:
           node-version: 18
 
-      - name: Setup Java (Temurin 11)
+      - name: Setup Java
         uses: actions/setup-java@v3
         with:
           distribution: 'temurin'
           java-version: '11'
 
-      - name: Install Android SDK command-line tools
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y wget unzip zip lib32stdc++6 lib32z1
-          mkdir -p $ANDROID_SDK_ROOT/cmdline-tools
-          cd $ANDROID_SDK_ROOT
-          # تحميل أدوات سطر الأوامر (قد يتغير اسم الحزمة - هذا رابط شائع)
-          wget -q https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip -O cmdline.zip
-          unzip -q cmdline.zip -d cmdline-tools
-          # وضع bin في PATH
-          mv cmdline-tools/cmdline-tools cmdline-tools/latest || true
-          export PATH=$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$PATH
-          # قبول الرخص وتثبيت الأدوات المطلوبة
-          yes | $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager --sdk_root=${ANDROID_SDK_ROOT} "platform-tools" "platforms;android-33" "build-tools;33.0.2"
-        shell: bash
-
-      - name: Show sdk info
-        run: |
-          echo "ANDROID_SDK_ROOT = $ANDROID_SDK_ROOT"
-          ls -la $ANDROID_SDK_ROOT
-          $ANDROID_SDK_ROOT/platform-tools/adb version || true
-
-      - name: Install npm dependencies
+      - name: Install dependencies
         run: npm ci
 
-      - name: Prepare Android (Capacitor sync)
-        run: |
-          # لو تستخدم Capacitor: sync changes to android folder
-          npx cap sync android || true
+      - name: Sync Capacitor
+        run: npx cap sync android
 
-      - name: Make gradlew executable
+      - name: Build APK
         run: |
-          if [ -f android/gradlew ]; then
-            chmod +x android/gradlew
-            git update-index --chmod=+x android/gradlew || true
-          fi
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug
 
-      - name: Build APK (debug)
-        working-directory: android
-        run: |
-          ./gradlew assembleDebug --no-daemon
-
-      - name: Upload APK artifact
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: app-debug-apk
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          name: app-debug
+          path: android/app/build/outputs/apk/debug/*.apk
